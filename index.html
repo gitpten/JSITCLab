@@ -3,14 +3,33 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Облік дітей, змін дитячого табору та замовлень на участь у змінах.">
-    <title>Облік замовлень дитячого табору</title>
+    <meta name="description" content="Облік дітей, батьків, змін табору та бронювань.">
+    <title>Система керування бронюванням у таборі</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="js/script.js" defer></script>
   </head>
   <body>
-    <main>
-      <h1>Облік замовлень дитячого табору</h1>
+    <main class="page-shell">
+      <h1>Система керування бронюванням у таборі</h1>
+      <nav class="tabs" role="tablist" aria-label="Записи табору">
+        <button class="tab is-active" id="children-tab" type="button" role="tab" aria-selected="true" aria-controls="children-panel" tabindex="0" data-panel="children-panel">Діти</button>
+        <button class="tab" id="parents-tab" type="button" role="tab" aria-selected="false" aria-controls="parents-panel" tabindex="-1" data-panel="parents-panel">Батьки</button>
+        <button class="tab" id="camp-shifts-tab" type="button" role="tab" aria-selected="false" aria-controls="camp-shifts-panel" tabindex="-1" data-panel="camp-shifts-panel">Табірні зміни</button>
+        <button class="tab" id="bookings-tab" type="button" role="tab" aria-selected="false" aria-controls="bookings-panel" tabindex="-1" data-panel="bookings-panel">Бронювання</button>
+      </nav>
+
+      <section class="entity-panel" id="children-panel" role="tabpanel" aria-labelledby="children-tab">
+        <div class="table-wrap"><table><thead><tr><th scope="col">№</th><th scope="col">Ім’я</th><th scope="col">Прізвище</th><th scope="col">По-батькові</th><th scope="col">Дата народження</th><th scope="col">Стать</th><th scope="col">Примітки</th></tr></thead><tbody id="children-table-body"></tbody></table></div>
+      </section>
+      <section class="entity-panel" id="parents-panel" role="tabpanel" aria-labelledby="parents-tab" hidden>
+        <div class="table-wrap"><table><thead><tr><th scope="col">№</th><th scope="col">Ім’я</th><th scope="col">Прізвище</th><th scope="col">По-батькові</th><th scope="col">Телефон</th><th scope="col">Електронна пошта</th><th scope="col">Ким доводиться</th></tr></thead><tbody id="parents-table-body"></tbody></table></div>
+      </section>
+      <section class="entity-panel" id="camp-shifts-panel" role="tabpanel" aria-labelledby="camp-shifts-tab" hidden>
+        <div class="table-wrap"><table><thead><tr><th scope="col">№</th><th scope="col">Назва</th><th scope="col">Початок</th><th scope="col">Завершення</th><th scope="col">Вартість</th><th scope="col">Місткість</th><th scope="col">Опис</th></tr></thead><tbody id="camp-shifts-table-body"></tbody></table></div>
+      </section>
+      <section class="entity-panel" id="bookings-panel" role="tabpanel" aria-labelledby="bookings-tab" hidden>
+        <div class="table-wrap"><table><thead><tr><th scope="col">№</th><th scope="col">№ одного з батьків</th><th scope="col">№ дитини</th><th scope="col">№ зміни</th><th scope="col">Створено</th><th scope="col">Статус</th><th scope="col">Оплата</th><th scope="col">Коментар</th></tr></thead><tbody id="bookings-table-body"></tbody></table></div>
+      </section>
     </main>
   </body>
 </html>
