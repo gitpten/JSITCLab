@@ -193,6 +193,10 @@ function createTable(data, columns) {
 }
 
 const fullName = (person) => [person?.firstName, person?.lastName].filter(Boolean).join(" ") || "—";
+function findById(records, id) {
+  return (Array.isArray(records) ? records : []).find((record) => record?.id === id);
+}
+
 const columns = {
   children: [
     { label: "№", value: "id" }, { label: "Ім’я", value: "firstName" },
@@ -214,12 +218,14 @@ const columns = {
   ],
   bookings: [
     { label: "№", value: "id" },
-    { label: "Дитина", value: (booking) => fullName(children.find(({ id }) => id === booking.childId)) },
-    { label: "Представник", value: (booking) => fullName(parents.find(({ id }) => id === booking.parentId)) },
-    { label: "Зміна", value: (booking) => campShifts.find(({ id }) => id === booking.shiftId)?.name },
+    { label: "Дитина", value: (booking) => fullName(findById(children, booking?.childId)) },
+    { label: "Представник", value: (booking) => fullName(findById(parents, booking?.parentId)) },
+    { label: "Зміна", value: (booking) => findById(campShifts, booking?.shiftId)?.name },
     { label: "Дати зміни", value: (booking) => {
-      const shift = campShifts.find(({ id }) => id === booking.shiftId);
-      return shift ? `${formatValue("startDate", shift.startDate)} – ${formatValue("endDate", shift.endDate)}` : "—";
+      const shift = findById(campShifts, booking?.shiftId);
+      return shift
+        ? `${formatValue("startDate", shift.startDate)} – ${formatValue("endDate", shift.endDate)}`
+        : "—";
     } },
     { label: "Створено", value: "createdAt" }, { label: "Статус", value: "status" },
     { label: "Оплата", value: "paymentStatus" }, { label: "Коментар", value: "comment" },
