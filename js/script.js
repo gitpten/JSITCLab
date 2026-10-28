@@ -377,6 +377,76 @@ function renderTable(containerId, rows, tableColumns) {
   if (container) container.replaceChildren(createTable(rows, tableColumns));
 }
 
+const formSubmissionsInProgress = new WeakSet();
+
+function refreshBookingSelectors() {
+  const form = document.getElementById("booking-form");
+  if (!form) return;
+
+  const selectors = [
+    { name: "childId", records: children, placeholder: "Оберіть дитину", label: (child) => fullName(child) },
+    { name: "parentId", records: parents, placeholder: "Оберіть законного представника", label: (parent) => fullName(parent) },
+    { name: "shiftId", records: campShifts, placeholder: "Оберіть зміну", label: (shift) => `${shift.name} (${formatValue("startDate", shift.startDate)} – ${formatValue("endDate", shift.endDate)})` },
+  ];
+
+  selectors.forEach(({ name, records, placeholder, label }) => {
+    const select = form.elements.namedItem(name);
+    const selectedValue = select.value;
+    select.replaceChildren(new Option(records.length ? placeholder : "Немає доступних записів", ""));
+    records.forEach((record) => select.add(new Option(label(record), String(record.id))));
+    select.value = records.some((record) => String(record.id) === selectedValue) ? selectedValue : "";
+    select.disabled = records.length === 0;
+  });
+
+  const unavailable = selectors.some(({ records }) => records.length === 0);
+  form.querySelector("button[type='submit']").disabled = unavailable;
+  const message = document.getElementById("booking-form-message");
+  if (unavailable) {
+    message.textContent = "Спочатку додайте дитину, представника та зміну, щоб оформити бронювання.";
+    message.classList.add("is-error");
+  } else if (message.textContent.startsWith("Спочатку додайте")) {
+    message.textContent = "";
+    message.classList.remove("is-error");
+  }
+}
+
+function createRecord({ entity, records, record, form, tableId, tableColumns, message, successText }) {
+  if (formSubmissionsInProgress.has(form)) return false;
+  formSubmissionsInProgress.add(form);
+  const submitButton = form.querySelector("button[type='submit']");
+  submitButton.disabled = true;
+
+  try {
+    const key = STORAGE_KEYS[entity];
+    if (!key || records.some((existing) => String(existing?.id) === String(record.id))) {
+      throw new Error("Не вдалося підготувати унікальний запис.");
+    }
+
+    // Записуємо новий стан до localStorage до зміни масиву: якщо збереження
+    // завершиться помилкою, дані в пам’яті залишаться незмінними.
+    try {
+      window.localStorage.setItem(key, JSON.stringify([...records, record]));
+    } catch {
+      message.textContent = "Не вдалося зберегти запис у сховище браузера. Перевірте доступ до localStorage і спробуйте ще раз.";
+      message.classList.remove("is-success");
+      message.classList.add("is-error");
+      return false;
+    }
+
+    records.push(record);
+    renderTable(tableId, records, tableColumns);
+    if (["children", "parents", "campShifts"].includes(entity)) refreshBookingSelectors();
+    form.reset();
+    message.textContent = successText;
+    message.classList.remove("is-error");
+    message.classList.add("is-success");
+    return true;
+  } finally {
+    formSubmissionsInProgress.delete(form);
+    submitButton.disabled = false;
+  }
+}
+
 tableConfigs.forEach(({ rows, containerId, columns: tableColumns }) => {
   renderTable(containerId, rows, tableColumns);
 });
@@ -417,11 +487,11 @@ const childForm = document.getElementById("child-form");
       gender: values.gender,
       notes: values.notes.trim(),
     };
-    children.push(child);
-    renderTable("children-table", children, columns.children);
-    childForm.reset();
-    childFormMessage.textContent = `Запис «${[child.firstName, child.middleName, child.lastName].filter(Boolean).join(" ")}» підготовлено.`;
-    childFormMessage.classList.add("is-success");
+    createRecord({
+      entity: "children", records: children, record: child, form: childForm,
+      tableId: "children-table", tableColumns: columns.children, message: childFormMessage,
+      successText: `Запис «${[child.firstName, child.middleName, child.lastName].filter(Boolean).join(" ")}» збережено.`,
+    });
   });
 }
 
@@ -460,11 +530,11 @@ if (parentForm) {
       email: values.email.trim(),
       relationship: values.relationship,
     };
-    parents.push(parent);
-    renderTable("parents-table", parents, columns.parents);
-    parentForm.reset();
-    parentFormMessage.textContent = `Запис «${[parent.firstName, parent.middleName, parent.lastName].filter(Boolean).join(" ")}» підготовлено.`;
-    parentFormMessage.classList.add("is-success");
+    createRecord({
+      entity: "parents", records: parents, record: parent, form: parentForm,
+      tableId: "parents-table", tableColumns: columns.parents, message: parentFormMessage,
+      successText: `Запис «${[parent.firstName, parent.middleName, parent.lastName].filter(Boolean).join(" ")}» збережено.`,
+    });
   });
 }
 
@@ -503,41 +573,18 @@ if (campShiftForm) {
       capacity: values.capacity,
       description: values.description.trim(),
     };
-    campShifts.push(campShift);
-    renderTable("camp-shifts-table", campShifts, columns.campShifts);
-    campShiftForm.reset();
-    campShiftFormMessage.textContent = `Зміну «${campShift.name}» підготовлено.`;
-    campShiftFormMessage.classList.add("is-success");
+    createRecord({
+      entity: "campShifts", records: campShifts, record: campShift, form: campShiftForm,
+      tableId: "camp-shifts-table", tableColumns: columns.campShifts, message: campShiftFormMessage,
+      successText: `Зміну «${campShift.name}» збережено.`,
+    });
   });
 }
 
 const bookingForm = document.getElementById("booking-form");
 if (bookingForm) {
   const bookingFormMessage = document.getElementById("booking-form-message");
-  const bookingSelectors = [
-    { name: "childId", records: children, placeholder: "Оберіть дитину", label: (child) => fullName(child) },
-    { name: "parentId", records: parents, placeholder: "Оберіть законного представника", label: (parent) => fullName(parent) },
-    { name: "shiftId", records: campShifts, placeholder: "Оберіть зміну", label: (shift) => `${shift.name} (${formatValue("startDate", shift.startDate)} – ${formatValue("endDate", shift.endDate)})` },
-  ];
-
-  bookingSelectors.forEach(({ name, records, placeholder, label }) => {
-    const select = bookingForm.elements.namedItem(name);
-    records.forEach((record) => {
-      const option = document.createElement("option");
-      option.value = String(record.id);
-      option.textContent = label(record);
-      select.append(option);
-    });
-    select.disabled = records.length === 0;
-    select.options[0].textContent = records.length ? placeholder : "Немає доступних записів";
-  });
-
-  const unavailableReferences = bookingSelectors.filter(({ records }) => records.length === 0);
-  if (unavailableReferences.length) {
-    bookingFormMessage.textContent = "Спочатку додайте дитину, представника та зміну, щоб оформити бронювання.";
-    bookingFormMessage.classList.add("is-error");
-    bookingForm.querySelector("button[type='submit']").disabled = true;
-  }
+  refreshBookingSelectors();
 
   bookingForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -571,11 +618,11 @@ if (bookingForm) {
       paymentStatus: values.paymentStatus,
       comment: values.comment.trim(),
     };
-    bookings.push(booking);
-    renderTable("bookings-table", bookings, columns.bookings);
-    bookingForm.reset();
-    bookingFormMessage.textContent = "Бронювання підготовлено.";
-    bookingFormMessage.classList.add("is-success");
+    createRecord({
+      entity: "bookings", records: bookings, record: booking, form: bookingForm,
+      tableId: "bookings-table", tableColumns: columns.bookings, message: bookingFormMessage,
+      successText: "Бронювання збережено.",
+    });
   });
 }
 
