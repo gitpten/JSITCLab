@@ -20,6 +20,15 @@ h1 {
   letter-spacing: -0.035em;
 }
 
+.storage-notice {
+  padding: 12px 16px;
+  border: 1px solid #f2c078;
+  border-radius: 8px;
+  margin: 0 0 18px;
+  background: #fff8eb;
+  color: #7a4b0b;
+}
+
 .tabs {
   display: flex;
   gap: 8px;
