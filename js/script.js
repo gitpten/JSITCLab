@@ -165,6 +165,113 @@ function isNumberInRange(value, { min = -Infinity, max = Infinity } = {}) {
   return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
 }
 
+const allowedValues = {
+  gender: ["female", "male"],
+  relationship: ["mother", "father", "guardian"],
+  status: ["new", "pending", "confirmed", "cancelled", "completed"],
+  paymentStatus: ["unpaid", "partially_paid", "paid", "refunded"],
+};
+
+const requiredFields = {
+  child: ["firstName", "lastName", "birthDate", "gender"],
+  parent: ["firstName", "lastName", "phone", "email", "relationship"],
+  campShift: ["name", "startDate", "endDate", "price", "capacity"],
+  booking: ["parentId", "childId", "shiftId", "createdAt", "status", "paymentStatus"],
+};
+
+const fieldLabels = {
+  firstName: "Ім’я", lastName: "Прізвище", birthDate: "Дата народження", gender: "Стать",
+  phone: "Телефон", email: "Електронна пошта", relationship: "Ступінь спорідненості",
+  name: "Назва зміни", startDate: "Дата початку", endDate: "Дата завершення",
+  price: "Вартість", capacity: "Місткість", parentId: "Батько або представник",
+  childId: "Дитина", shiftId: "Зміна", createdAt: "Дата створення",
+  status: "Статус замовлення", paymentStatus: "Статус оплати",
+};
+
+function isValidDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function isValidEmail(value) {
+  return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function isValidPhone(value) {
+  if (typeof value !== "string" || !/^\+?[0-9][0-9\s().-]*[0-9]$/.test(value.trim())) return false;
+  const digitCount = value.replace(/\D/g, "").length;
+  return digitCount >= 7 && digitCount <= 15;
+}
+
+function validateEntity(entity, values, records = {}) {
+  const errors = {};
+  const addError = (field, message) => { errors[field] = message; };
+
+  if (!requiredFields[entity]) {
+    return { isValid: false, errors: { _form: "Невідомий тип запису для перевірки." } };
+  }
+
+  validateRequired(values, requiredFields[entity]).forEach((field) => {
+    addError(field, `Заповніть поле «${fieldLabels[field] ?? field}».`);
+  });
+
+  if (entity === "child") {
+    ["firstName", "lastName", "middleName", "notes"].forEach((field) => {
+      if (isRequired(values[field]) && !isWithinLength(values[field], { max: field === "notes" ? 1000 : 100 })) {
+        addError(field, `Поле «${fieldLabels[field] ?? field}» задовге.`);
+      }
+    });
+    if (isRequired(values.birthDate) && !isValidDate(values.birthDate)) addError("birthDate", "Вкажіть коректну дату народження.");
+    if (isRequired(values.gender) && !allowedValues.gender.includes(values.gender)) addError("gender", "Оберіть коректну стать.");
+  }
+
+  if (entity === "parent") {
+    ["firstName", "lastName", "middleName"].forEach((field) => {
+      if (isRequired(values[field]) && !isWithinLength(values[field], { max: 100 })) addError(field, `Поле «${fieldLabels[field]}» задовге.`);
+    });
+    if (isRequired(values.phone) && !isValidPhone(values.phone)) addError("phone", "Вкажіть коректний номер телефону (від 7 до 15 цифр).");
+    if (isRequired(values.email) && !isValidEmail(values.email)) addError("email", "Вкажіть коректну адресу електронної пошти.");
+    if (isRequired(values.relationship) && !allowedValues.relationship.includes(values.relationship)) addError("relationship", "Оберіть коректний ступінь спорідненості.");
+  }
+
+  if (entity === "campShift") {
+    if (isRequired(values.name) && !isWithinLength(values.name, { max: 120 })) addError("name", "Назва зміни не може перевищувати 120 символів.");
+    ["startDate", "endDate"].forEach((field) => {
+      if (isRequired(values[field]) && !isValidDate(values[field])) addError(field, `Вкажіть коректну дату: «${fieldLabels[field]}».`);
+    });
+    if (isValidDate(values.startDate) && isValidDate(values.endDate) && values.endDate < values.startDate) {
+      addError("endDate", "Дата завершення не може передувати даті початку.");
+    }
+    if (values.price !== "" && values.price !== null && values.price !== undefined && !isNumberInRange(values.price, { min: 0 })) {
+      addError("price", "Вартість має бути числом, більшим або рівним нулю.");
+    }
+    if (values.capacity !== "" && values.capacity !== null && values.capacity !== undefined) {
+      if (!isNumberInRange(values.capacity, { min: 1 }) || !Number.isInteger(values.capacity)) {
+        addError("capacity", "Місткість має бути додатним цілим числом.");
+      }
+    }
+    if (isRequired(values.description) && !isWithinLength(values.description, { max: 1000 })) addError("description", "Опис не може перевищувати 1000 символів.");
+  }
+
+  if (entity === "booking") {
+    const referenceSets = { parentId: records.parents, childId: records.children, shiftId: records.campShifts };
+    Object.entries(referenceSets).forEach(([field, items]) => {
+      if (isRequired(values[field]) && (!Array.isArray(items) || !items.some((item) => String(item?.id) === String(values[field])))) {
+        addError(field, `Обраний запис «${fieldLabels[field]}» не знайдено.`);
+      }
+    });
+    if (isRequired(values.createdAt) && (typeof values.createdAt !== "string" || !Number.isFinite(Date.parse(values.createdAt)))) {
+      addError("createdAt", "Вкажіть коректну дату створення замовлення.");
+    }
+    if (isRequired(values.status) && !allowedValues.status.includes(values.status)) addError("status", "Оберіть коректний статус замовлення.");
+    if (isRequired(values.paymentStatus) && !allowedValues.paymentStatus.includes(values.paymentStatus)) addError("paymentStatus", "Оберіть коректний статус оплати.");
+    if (isRequired(values.comment) && !isWithinLength(values.comment, { max: 1000 })) addError("comment", "Коментар не може перевищувати 1000 символів.");
+  }
+
+  return { isValid: Object.keys(errors).length === 0, errors };
+}
+
 function generateUniqueId(records) {
   const existingIds = new Set(
     (Array.isArray(records) ? records : []).map((record) => record?.id),
