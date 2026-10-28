@@ -157,6 +157,9 @@ function formatValue(field, value) {
       maximumFractionDigits: 0,
     }).format(value);
   }
+  if (field === "capacity") {
+    return `${new Intl.NumberFormat("uk-UA").format(value)} дітей`;
+  }
   return value;
 }
 
@@ -205,7 +208,7 @@ const columns = {
   ],
   campShifts: [
     { label: "№", value: "id" }, { label: "Назва", value: "name" },
-    { label: "Початок", value: "startDate" }, { label: "Завершення", value: "endDate" },
+    { label: "Дата початку", value: "startDate" }, { label: "Дата завершення", value: "endDate" },
     { label: "Вартість", value: "price" }, { label: "Місткість", value: "capacity" },
     { label: "Опис", value: "description" },
   ],
