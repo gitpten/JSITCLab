@@ -57,6 +57,42 @@
         <div class="table-wrap" id="children-table"></div>
       </section>
       <section class="entity-panel" id="parents-panel" role="tabpanel" aria-labelledby="parents-tab" hidden>
+        <form class="record-form" id="parent-form" novalidate>
+          <h2>Додати батька або законного представника</h2>
+          <div class="form-grid">
+            <label><span class="field-label">Ім’я <span aria-hidden="true">*</span></span>
+              <input name="firstName" type="text" autocomplete="given-name" required aria-describedby="parent-firstName-error">
+              <span class="field-error" id="parent-firstName-error"></span>
+            </label>
+            <label><span class="field-label">Прізвище <span aria-hidden="true">*</span></span>
+              <input name="lastName" type="text" autocomplete="family-name" required aria-describedby="parent-lastName-error">
+              <span class="field-error" id="parent-lastName-error"></span>
+            </label>
+            <label>По батькові
+              <input name="middleName" type="text" autocomplete="additional-name" aria-describedby="parent-middleName-error">
+              <span class="field-error" id="parent-middleName-error"></span>
+            </label>
+            <label><span class="field-label">Телефон <span aria-hidden="true">*</span></span>
+              <input name="phone" type="tel" autocomplete="tel" required aria-describedby="parent-phone-error">
+              <span class="field-error" id="parent-phone-error"></span>
+            </label>
+            <label><span class="field-label">Електронна пошта <span aria-hidden="true">*</span></span>
+              <input name="email" type="email" autocomplete="email" required aria-describedby="parent-email-error">
+              <span class="field-error" id="parent-email-error"></span>
+            </label>
+            <label><span class="field-label">Ким доводиться <span aria-hidden="true">*</span></span>
+              <select name="relationship" required aria-describedby="parent-relationship-error">
+                <option value="">Оберіть ступінь спорідненості</option>
+                <option value="mother">Мати</option>
+                <option value="father">Батько</option>
+                <option value="guardian">Законний представник</option>
+              </select>
+              <span class="field-error" id="parent-relationship-error"></span>
+            </label>
+          </div>
+          <p class="form-message" id="parent-form-message" role="status" aria-live="polite"></p>
+          <button class="submit-button" type="submit">Додати представника</button>
+        </form>
         <div class="table-wrap" id="parents-table"></div>
       </section>
       <section class="entity-panel" id="camp-shifts-panel" role="tabpanel" aria-labelledby="camp-shifts-tab" hidden>

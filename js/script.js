@@ -113,6 +113,7 @@ const translations = {
   male: "чоловіча",
   mother: "мати",
   father: "батько",
+  guardian: "законний представник",
   confirmed: "підтверджено",
   pending: "очікує підтвердження",
   new: "нове",
@@ -381,7 +382,7 @@ tableConfigs.forEach(({ rows, containerId, columns: tableColumns }) => {
 });
 
 const childForm = document.getElementById("child-form");
-if (childForm) {
+  if (childForm) {
   const childFormMessage = document.getElementById("child-form-message");
 
   childForm.addEventListener("submit", (event) => {
@@ -421,6 +422,49 @@ if (childForm) {
     childForm.reset();
     childFormMessage.textContent = `Запис «${[child.firstName, child.middleName, child.lastName].filter(Boolean).join(" ")}» підготовлено.`;
     childFormMessage.classList.add("is-success");
+  });
+}
+
+const parentForm = document.getElementById("parent-form");
+if (parentForm) {
+  const parentFormMessage = document.getElementById("parent-form-message");
+
+  parentForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    parentFormMessage.textContent = "";
+    parentFormMessage.classList.remove("is-success", "is-error");
+    parentForm.querySelectorAll(".field-error").forEach((message) => { message.textContent = ""; });
+    parentForm.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
+
+    const values = readFormValues(parentForm);
+    const validation = validateEntity("parent", values);
+    if (!validation.isValid) {
+      Object.entries(validation.errors).forEach(([name, message]) => {
+        const field = parentForm.elements.namedItem(name);
+        const fieldMessage = field?.closest("label")?.querySelector(".field-error");
+        if (fieldMessage) fieldMessage.textContent = message;
+        if (field && "setAttribute" in field) field.setAttribute("aria-invalid", "true");
+      });
+      parentFormMessage.textContent = "Перевірте позначені поля та виправте помилки.";
+      parentFormMessage.classList.add("is-error");
+      parentForm.querySelector("[aria-invalid='true']")?.focus();
+      return;
+    }
+
+    const parent = {
+      id: generateUniqueId(parents),
+      firstName: values.firstName.trim(),
+      lastName: values.lastName.trim(),
+      middleName: values.middleName.trim(),
+      phone: values.phone.trim(),
+      email: values.email.trim(),
+      relationship: values.relationship,
+    };
+    parents.push(parent);
+    renderTable("parents-table", parents, columns.parents);
+    parentForm.reset();
+    parentFormMessage.textContent = `Запис «${[parent.firstName, parent.middleName, parent.lastName].filter(Boolean).join(" ")}» підготовлено.`;
+    parentFormMessage.classList.add("is-success");
   });
 }
 
