@@ -19,6 +19,41 @@
       </nav>
 
       <section class="entity-panel" id="children-panel" role="tabpanel" aria-labelledby="children-tab">
+        <form class="record-form" id="child-form" novalidate>
+          <h2>Додати дитину</h2>
+          <div class="form-grid">
+            <label><span class="field-label">Ім’я <span aria-hidden="true">*</span></span>
+              <input name="firstName" type="text" autocomplete="given-name" required aria-describedby="firstName-error">
+              <span class="field-error" id="firstName-error"></span>
+            </label>
+            <label><span class="field-label">Прізвище <span aria-hidden="true">*</span></span>
+              <input name="lastName" type="text" autocomplete="family-name" required aria-describedby="lastName-error">
+              <span class="field-error" id="lastName-error"></span>
+            </label>
+            <label>По батькові
+              <input name="middleName" type="text" autocomplete="additional-name" aria-describedby="middleName-error">
+              <span class="field-error" id="middleName-error"></span>
+            </label>
+            <label><span class="field-label">Дата народження <span aria-hidden="true">*</span></span>
+              <input name="birthDate" type="date" required aria-describedby="birthDate-error">
+              <span class="field-error" id="birthDate-error"></span>
+            </label>
+            <label><span class="field-label">Стать <span aria-hidden="true">*</span></span>
+              <select name="gender" required aria-describedby="gender-error">
+                <option value="">Оберіть стать</option>
+                <option value="female">Жіноча</option>
+                <option value="male">Чоловіча</option>
+              </select>
+              <span class="field-error" id="gender-error"></span>
+            </label>
+            <label class="form-field-wide">Примітки
+              <textarea name="notes" rows="3" aria-describedby="notes-error"></textarea>
+              <span class="field-error" id="notes-error"></span>
+            </label>
+          </div>
+          <p class="form-message" id="child-form-message" role="status" aria-live="polite"></p>
+          <button class="submit-button" type="submit">Додати дитину</button>
+        </form>
         <div class="table-wrap" id="children-table"></div>
       </section>
       <section class="entity-panel" id="parents-panel" role="tabpanel" aria-labelledby="parents-tab" hidden>

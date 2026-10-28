@@ -64,6 +64,38 @@ h1 {
 }
 
 .entity-panel[hidden] { display: none; }
+.record-form {
+  max-width: 760px;
+  padding: 20px;
+  margin: 0 0 24px;
+  border: 1px solid #e1e7ef;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+.record-form h2 { margin: 0 0 16px; color: #14213d; font-size: 1.2rem; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.form-grid label { display: flex; flex-direction: column; gap: 6px; color: #344054; font-size: 0.9rem; font-weight: 600; }
+.form-grid .field-label { display: inline-flex; flex-direction: row; align-items: baseline; gap: 4px; }
+.form-grid input, .form-grid select, .form-grid textarea {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid #cfd7e3;
+  border-radius: 6px;
+  background: #fff;
+  color: #1d2939;
+  font: inherit;
+  font-weight: 400;
+}
+.form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { outline: 3px solid #d8e7ff; border-color: #2563eb; }
+.form-grid [aria-invalid="true"] { border-color: #c62828; }
+.form-field-wide { grid-column: 1 / -1; }
+.field-error { min-height: 0; color: #b42318; font-size: 0.8rem; font-weight: 400; }
+.form-message { min-height: 1.25em; margin: 14px 0 10px; font-size: 0.9rem; }
+.form-message.is-error { color: #b42318; }
+.form-message.is-success { color: #167647; }
+.submit-button { padding: 10px 16px; border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; font: inherit; font-weight: 600; }
+.submit-button:hover { background: #1d4ed8; }
+.submit-button:focus-visible { outline: 3px solid #a9c8ff; outline-offset: 2px; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; text-align: left; }
 th, td { padding: 12px 14px; border-bottom: 1px solid #edf0f5; white-space: nowrap; }
@@ -75,4 +107,7 @@ tbody tr:last-child td { border-bottom: 0; }
   .page-shell { width: min(100% - 24px, 1120px); margin: 32px auto; }
   .entity-panel { padding: 12px; }
   .tab { padding: 11px 12px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-field-wide { grid-column: auto; }
+  .record-form { padding: 14px; }
 }
