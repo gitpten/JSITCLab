@@ -96,6 +96,37 @@
         <div class="table-wrap" id="parents-table"></div>
       </section>
       <section class="entity-panel" id="camp-shifts-panel" role="tabpanel" aria-labelledby="camp-shifts-tab" hidden>
+        <form class="record-form" id="camp-shift-form" novalidate>
+          <h2>Додати табірну зміну</h2>
+          <div class="form-grid">
+            <label class="form-field-wide"><span class="field-label">Назва зміни <span aria-hidden="true">*</span></span>
+              <input name="name" type="text" maxlength="120" required aria-describedby="camp-shift-name-error">
+              <span class="field-error" id="camp-shift-name-error"></span>
+            </label>
+            <label><span class="field-label">Дата початку <span aria-hidden="true">*</span></span>
+              <input name="startDate" type="date" required aria-describedby="camp-shift-startDate-error">
+              <span class="field-error" id="camp-shift-startDate-error"></span>
+            </label>
+            <label><span class="field-label">Дата завершення <span aria-hidden="true">*</span></span>
+              <input name="endDate" type="date" required aria-describedby="camp-shift-endDate-error">
+              <span class="field-error" id="camp-shift-endDate-error"></span>
+            </label>
+            <label><span class="field-label">Вартість, грн <span aria-hidden="true">*</span></span>
+              <input name="price" type="number" min="0" step="any" required aria-describedby="camp-shift-price-error">
+              <span class="field-error" id="camp-shift-price-error"></span>
+            </label>
+            <label><span class="field-label">Місткість, дітей <span aria-hidden="true">*</span></span>
+              <input name="capacity" type="number" min="1" step="1" required aria-describedby="camp-shift-capacity-error">
+              <span class="field-error" id="camp-shift-capacity-error"></span>
+            </label>
+            <label class="form-field-wide">Опис програми
+              <textarea name="description" rows="3" maxlength="1000" aria-describedby="camp-shift-description-error"></textarea>
+              <span class="field-error" id="camp-shift-description-error"></span>
+            </label>
+          </div>
+          <p class="form-message" id="camp-shift-form-message" role="status" aria-live="polite"></p>
+          <button class="submit-button" type="submit">Додати зміну</button>
+        </form>
         <div class="table-wrap" id="camp-shifts-table"></div>
       </section>
       <section class="entity-panel" id="bookings-panel" role="tabpanel" aria-labelledby="bookings-tab" hidden>

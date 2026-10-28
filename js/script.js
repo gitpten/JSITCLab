@@ -468,6 +468,49 @@ if (parentForm) {
   });
 }
 
+const campShiftForm = document.getElementById("camp-shift-form");
+if (campShiftForm) {
+  const campShiftFormMessage = document.getElementById("camp-shift-form-message");
+
+  campShiftForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    campShiftFormMessage.textContent = "";
+    campShiftFormMessage.classList.remove("is-success", "is-error");
+    campShiftForm.querySelectorAll(".field-error").forEach((message) => { message.textContent = ""; });
+    campShiftForm.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
+
+    const values = readFormValues(campShiftForm);
+    const validation = validateEntity("campShift", values);
+    if (!validation.isValid) {
+      Object.entries(validation.errors).forEach(([name, message]) => {
+        const field = campShiftForm.elements.namedItem(name);
+        const fieldMessage = document.getElementById(`camp-shift-${name}-error`);
+        if (fieldMessage) fieldMessage.textContent = message;
+        if (field && "setAttribute" in field) field.setAttribute("aria-invalid", "true");
+      });
+      campShiftFormMessage.textContent = "Перевірте позначені поля та виправте помилки.";
+      campShiftFormMessage.classList.add("is-error");
+      campShiftForm.querySelector("[aria-invalid='true']")?.focus();
+      return;
+    }
+
+    const campShift = {
+      id: generateUniqueId(campShifts),
+      name: values.name.trim(),
+      startDate: values.startDate,
+      endDate: values.endDate,
+      price: values.price,
+      capacity: values.capacity,
+      description: values.description.trim(),
+    };
+    campShifts.push(campShift);
+    renderTable("camp-shifts-table", campShifts, columns.campShifts);
+    campShiftForm.reset();
+    campShiftFormMessage.textContent = `Зміну «${campShift.name}» підготовлено.`;
+    campShiftFormMessage.classList.add("is-success");
+  });
+}
+
 const tabs = Array.from(document.querySelectorAll("[role='tab']"));
 const panels = Array.from(document.querySelectorAll("[role='tabpanel']"));
 
