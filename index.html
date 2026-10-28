@@ -130,6 +130,44 @@
         <div class="table-wrap" id="camp-shifts-table"></div>
       </section>
       <section class="entity-panel" id="bookings-panel" role="tabpanel" aria-labelledby="bookings-tab" hidden>
+        <form class="record-form" id="booking-form" novalidate>
+          <h2>Нове бронювання</h2>
+          <div class="form-grid">
+            <label><span class="field-label">Дитина <span aria-hidden="true">*</span></span>
+              <select name="childId" required aria-describedby="booking-childId-error"><option value="">Оберіть дитину</option></select>
+              <span class="field-error" id="booking-childId-error"></span>
+            </label>
+            <label><span class="field-label">Законний представник <span aria-hidden="true">*</span></span>
+              <select name="parentId" required aria-describedby="booking-parentId-error"><option value="">Оберіть законного представника</option></select>
+              <span class="field-error" id="booking-parentId-error"></span>
+            </label>
+            <label><span class="field-label">Зміна <span aria-hidden="true">*</span></span>
+              <select name="shiftId" required aria-describedby="booking-shiftId-error"><option value="">Оберіть зміну</option></select>
+              <span class="field-error" id="booking-shiftId-error"></span>
+            </label>
+            <label><span class="field-label">Статус замовлення <span aria-hidden="true">*</span></span>
+              <select name="status" required aria-describedby="booking-status-error">
+                <option value="new">Нове</option><option value="pending">Очікує підтвердження</option>
+                <option value="confirmed">Підтверджене</option><option value="cancelled">Скасоване</option>
+                <option value="completed">Завершене</option>
+              </select>
+              <span class="field-error" id="booking-status-error"></span>
+            </label>
+            <label><span class="field-label">Статус оплати <span aria-hidden="true">*</span></span>
+              <select name="paymentStatus" required aria-describedby="booking-paymentStatus-error">
+                <option value="unpaid">Не оплачено</option><option value="partially_paid">Сплачено частково</option>
+                <option value="paid">Сплачено</option><option value="refunded">Кошти повернено</option>
+              </select>
+              <span class="field-error" id="booking-paymentStatus-error"></span>
+            </label>
+            <label class="form-field-wide">Коментар
+              <textarea name="comment" rows="3" maxlength="1000" aria-describedby="booking-comment-error"></textarea>
+              <span class="field-error" id="booking-comment-error"></span>
+            </label>
+          </div>
+          <p class="form-message" id="booking-form-message" role="status" aria-live="polite"></p>
+          <button class="submit-button" type="submit">Додати бронювання</button>
+        </form>
         <div class="table-wrap" id="bookings-table"></div>
       </section>
     </main>

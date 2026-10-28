@@ -171,7 +171,7 @@ const fieldLabels = {
   firstName: "Ім’я", lastName: "Прізвище", birthDate: "Дата народження", gender: "Стать",
   phone: "Телефон", email: "Електронна пошта", relationship: "Ступінь спорідненості",
   name: "Назва зміни", startDate: "Дата початку", endDate: "Дата завершення",
-  price: "Вартість", capacity: "Місткість", parentId: "Батько або представник",
+  price: "Вартість", capacity: "Місткість", parentId: "Законний представник",
   childId: "Дитина", shiftId: "Зміна", createdAt: "Дата створення",
   status: "Статус замовлення", paymentStatus: "Статус оплати",
 };
@@ -327,7 +327,7 @@ function createTable(data, columns) {
 
 const fullName = (person) => [person?.firstName, person?.lastName].filter(Boolean).join(" ") || "—";
 function findById(records, id) {
-  return (Array.isArray(records) ? records : []).find((record) => record?.id === id);
+  return (Array.isArray(records) ? records : []).find((record) => String(record?.id) === String(id));
 }
 
 const columns = {
@@ -508,6 +508,74 @@ if (campShiftForm) {
     campShiftForm.reset();
     campShiftFormMessage.textContent = `Зміну «${campShift.name}» підготовлено.`;
     campShiftFormMessage.classList.add("is-success");
+  });
+}
+
+const bookingForm = document.getElementById("booking-form");
+if (bookingForm) {
+  const bookingFormMessage = document.getElementById("booking-form-message");
+  const bookingSelectors = [
+    { name: "childId", records: children, placeholder: "Оберіть дитину", label: (child) => fullName(child) },
+    { name: "parentId", records: parents, placeholder: "Оберіть законного представника", label: (parent) => fullName(parent) },
+    { name: "shiftId", records: campShifts, placeholder: "Оберіть зміну", label: (shift) => `${shift.name} (${formatValue("startDate", shift.startDate)} – ${formatValue("endDate", shift.endDate)})` },
+  ];
+
+  bookingSelectors.forEach(({ name, records, placeholder, label }) => {
+    const select = bookingForm.elements.namedItem(name);
+    records.forEach((record) => {
+      const option = document.createElement("option");
+      option.value = String(record.id);
+      option.textContent = label(record);
+      select.append(option);
+    });
+    select.disabled = records.length === 0;
+    select.options[0].textContent = records.length ? placeholder : "Немає доступних записів";
+  });
+
+  const unavailableReferences = bookingSelectors.filter(({ records }) => records.length === 0);
+  if (unavailableReferences.length) {
+    bookingFormMessage.textContent = "Спочатку додайте дитину, представника та зміну, щоб оформити бронювання.";
+    bookingFormMessage.classList.add("is-error");
+    bookingForm.querySelector("button[type='submit']").disabled = true;
+  }
+
+  bookingForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    bookingFormMessage.textContent = "";
+    bookingFormMessage.classList.remove("is-success", "is-error");
+    bookingForm.querySelectorAll(".field-error").forEach((message) => { message.textContent = ""; });
+    bookingForm.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
+
+    const values = { ...readFormValues(bookingForm), createdAt: new Date().toISOString() };
+    const validation = validateEntity("booking", values, { children, parents, campShifts });
+    if (!validation.isValid) {
+      Object.entries(validation.errors).forEach(([name, message]) => {
+        const field = bookingForm.elements.namedItem(name);
+        const fieldMessage = document.getElementById(`booking-${name}-error`);
+        if (fieldMessage) fieldMessage.textContent = message;
+        if (field && "setAttribute" in field) field.setAttribute("aria-invalid", "true");
+      });
+      bookingFormMessage.textContent = "Перевірте позначені поля та виправте помилки.";
+      bookingFormMessage.classList.add("is-error");
+      bookingForm.querySelector("[aria-invalid='true']")?.focus();
+      return;
+    }
+
+    const booking = {
+      id: generateUniqueId(bookings),
+      parentId: findById(parents, values.parentId).id,
+      childId: findById(children, values.childId).id,
+      shiftId: findById(campShifts, values.shiftId).id,
+      createdAt: values.createdAt,
+      status: values.status,
+      paymentStatus: values.paymentStatus,
+      comment: values.comment.trim(),
+    };
+    bookings.push(booking);
+    renderTable("bookings-table", bookings, columns.bookings);
+    bookingForm.reset();
+    bookingFormMessage.textContent = "Бронювання підготовлено.";
+    bookingFormMessage.classList.add("is-success");
   });
 }
 
