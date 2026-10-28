@@ -137,6 +137,44 @@ const translations = {
   refunded: "кошти повернено",
 };
 
+function readFormValues(form) {
+  return Object.fromEntries(
+    Array.from(form.elements)
+      .filter((field) => field.name && !field.disabled)
+      .map((field) => {
+        const value = field.value;
+        return [field.name, field.type === "number" && value !== "" ? Number(value) : value];
+      }),
+  );
+}
+
+function isRequired(value) {
+  return value !== null && value !== undefined && String(value).trim() !== "";
+}
+
+function validateRequired(values, fieldNames) {
+  return fieldNames.filter((name) => !isRequired(values[name]));
+}
+
+function isWithinLength(value, { min, max } = {}) {
+  const length = String(value ?? "").trim().length;
+  return (min === undefined || length >= min) && (max === undefined || length <= max);
+}
+
+function isNumberInRange(value, { min = -Infinity, max = Infinity } = {}) {
+  return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+}
+
+function generateUniqueId(records) {
+  const existingIds = new Set(
+    (Array.isArray(records) ? records : []).map((record) => record?.id),
+  );
+
+  let id = 1;
+  while (existingIds.has(id)) id += 1;
+  return id;
+}
+
 function formatValue(field, value) {
   if (value === null || value === undefined || value === "") return "—";
   if (translations[value]) return translations[value];
