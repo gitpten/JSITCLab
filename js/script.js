@@ -371,10 +371,58 @@ const tableConfigs = [
   { rows: bookings, containerId: "bookings-table", columns: columns.bookings },
 ];
 
-tableConfigs.forEach(({ rows, containerId, columns: tableColumns }) => {
+function renderTable(containerId, rows, tableColumns) {
   const container = document.getElementById(containerId);
-  if (container) container.append(createTable(rows, tableColumns));
+  if (container) container.replaceChildren(createTable(rows, tableColumns));
+}
+
+tableConfigs.forEach(({ rows, containerId, columns: tableColumns }) => {
+  renderTable(containerId, rows, tableColumns);
 });
+
+const childForm = document.getElementById("child-form");
+if (childForm) {
+  const childFormMessage = document.getElementById("child-form-message");
+
+  childForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    childFormMessage.textContent = "";
+    childFormMessage.classList.remove("is-success", "is-error");
+    childForm.querySelectorAll(".field-error").forEach((message) => { message.textContent = ""; });
+    childForm.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
+
+    const values = readFormValues(childForm);
+    const validation = validateEntity("child", values);
+    if (!validation.isValid) {
+      Object.entries(validation.errors).forEach(([name, message]) => {
+        const fieldMessage = document.getElementById(`${name}-error`);
+        const field = childForm.elements.namedItem(name);
+        if (fieldMessage) fieldMessage.textContent = message;
+        if (field && "setAttribute" in field) field.setAttribute("aria-invalid", "true");
+      });
+      childFormMessage.textContent = "Перевірте позначені поля та виправте помилки.";
+      childFormMessage.classList.add("is-error");
+      const firstInvalidField = childForm.querySelector("[aria-invalid='true']");
+      firstInvalidField?.focus();
+      return;
+    }
+
+    const child = {
+      id: generateUniqueId(children),
+      firstName: values.firstName.trim(),
+      lastName: values.lastName.trim(),
+      middleName: values.middleName.trim(),
+      birthDate: values.birthDate,
+      gender: values.gender,
+      notes: values.notes.trim(),
+    };
+    children.push(child);
+    renderTable("children-table", children, columns.children);
+    childForm.reset();
+    childFormMessage.textContent = `Запис «${[child.firstName, child.middleName, child.lastName].filter(Boolean).join(" ")}» підготовлено.`;
+    childFormMessage.classList.add("is-success");
+  });
+}
 
 const tabs = Array.from(document.querySelectorAll("[role='tab']"));
 const panels = Array.from(document.querySelectorAll("[role='tabpanel']"));
