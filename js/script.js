@@ -121,13 +121,6 @@ const bookings = [
   },
 ];
 
-const tableConfigs = [
-  { rows: children, bodyId: "children-table-body", fields: ["id", "firstName", "lastName", "middleName", "birthDate", "gender", "notes"] },
-  { rows: parents, bodyId: "parents-table-body", fields: ["id", "firstName", "lastName", "middleName", "phone", "email", "relationship"] },
-  { rows: campShifts, bodyId: "camp-shifts-table-body", fields: ["id", "name", "startDate", "endDate", "price", "capacity", "description"] },
-  { rows: bookings, bodyId: "bookings-table-body", fields: ["id", "parentId", "childId", "shiftId", "createdAt", "status", "paymentStatus", "comment"] },
-];
-
 const translations = {
   female: "жіноча",
   male: "чоловіча",
@@ -136,13 +129,16 @@ const translations = {
   confirmed: "підтверджено",
   pending: "очікує підтвердження",
   new: "нове",
+  cancelled: "скасовано",
+  completed: "завершено",
   paid: "сплачено",
   partially_paid: "сплачено частково",
   unpaid: "не сплачено",
+  refunded: "кошти повернено",
 };
 
 function formatValue(field, value) {
-  if (!value) return "—";
+  if (value === null || value === undefined || value === "") return "—";
   if (translations[value]) return translations[value];
   if (["birthDate", "startDate", "endDate"].includes(field)) {
     const [year, month, day] = value.split("-");
@@ -164,17 +160,79 @@ function formatValue(field, value) {
   return value;
 }
 
-tableConfigs.forEach(({ rows, bodyId, fields }) => {
-  const body = document.getElementById(bodyId);
-  rows.forEach((record) => {
+function createTable(data, columns) {
+  const table = document.createElement("table");
+  const head = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+
+  columns.forEach(({ label }) => {
+    const header = document.createElement("th");
+    header.scope = "col";
+    header.textContent = label;
+    headerRow.append(header);
+  });
+  head.append(headerRow);
+  table.append(head);
+
+  const body = document.createElement("tbody");
+  (Array.isArray(data) ? data : []).forEach((record) => {
     const row = document.createElement("tr");
-    fields.forEach((field) => {
+    columns.forEach(({ value, field }) => {
       const cell = document.createElement("td");
-      cell.textContent = formatValue(field, record[field]);
+      const cellValue = typeof value === "function" ? value(record) : record?.[value];
+      cell.textContent = formatValue(field ?? (typeof value === "string" ? value : ""), cellValue);
       row.append(cell);
     });
     body.append(row);
   });
+  table.append(body);
+  return table;
+}
+
+const fullName = (person) => [person?.firstName, person?.lastName].filter(Boolean).join(" ") || "—";
+const columns = {
+  children: [
+    { label: "№", value: "id" }, { label: "Ім’я", value: "firstName" },
+    { label: "Прізвище", value: "lastName" }, { label: "По-батькові", value: "middleName" },
+    { label: "Дата народження", value: "birthDate" }, { label: "Стать", value: "gender" },
+    { label: "Примітки", value: "notes" },
+  ],
+  parents: [
+    { label: "№", value: "id" }, { label: "Ім’я", value: "firstName" },
+    { label: "Прізвище", value: "lastName" }, { label: "По-батькові", value: "middleName" },
+    { label: "Телефон", value: "phone" }, { label: "Електронна пошта", value: "email" },
+    { label: "Ким доводиться", value: "relationship" },
+  ],
+  campShifts: [
+    { label: "№", value: "id" }, { label: "Назва", value: "name" },
+    { label: "Початок", value: "startDate" }, { label: "Завершення", value: "endDate" },
+    { label: "Вартість", value: "price" }, { label: "Місткість", value: "capacity" },
+    { label: "Опис", value: "description" },
+  ],
+  bookings: [
+    { label: "№", value: "id" },
+    { label: "Дитина", value: (booking) => fullName(children.find(({ id }) => id === booking.childId)) },
+    { label: "Представник", value: (booking) => fullName(parents.find(({ id }) => id === booking.parentId)) },
+    { label: "Зміна", value: (booking) => campShifts.find(({ id }) => id === booking.shiftId)?.name },
+    { label: "Дати зміни", value: (booking) => {
+      const shift = campShifts.find(({ id }) => id === booking.shiftId);
+      return shift ? `${formatValue("startDate", shift.startDate)} – ${formatValue("endDate", shift.endDate)}` : "—";
+    } },
+    { label: "Створено", value: "createdAt" }, { label: "Статус", value: "status" },
+    { label: "Оплата", value: "paymentStatus" }, { label: "Коментар", value: "comment" },
+  ],
+};
+
+const tableConfigs = [
+  { rows: children, containerId: "children-table", columns: columns.children },
+  { rows: parents, containerId: "parents-table", columns: columns.parents },
+  { rows: campShifts, containerId: "camp-shifts-table", columns: columns.campShifts },
+  { rows: bookings, containerId: "bookings-table", columns: columns.bookings },
+];
+
+tableConfigs.forEach(({ rows, containerId, columns: tableColumns }) => {
+  const container = document.getElementById(containerId);
+  if (container) container.append(createTable(rows, tableColumns));
 });
 
 const tabs = Array.from(document.querySelectorAll("[role='tab']"));
