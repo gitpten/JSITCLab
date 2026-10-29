@@ -296,7 +296,7 @@ function formatValue(field, value) {
   return value;
 }
 
-function createTable(data, columns) {
+function createTable(data, columns, entity) {
   const table = document.createElement("table");
   const head = document.createElement("thead");
   const headerRow = document.createElement("tr");
@@ -307,6 +307,11 @@ function createTable(data, columns) {
     header.textContent = label;
     headerRow.append(header);
   });
+  const actionsHeader = document.createElement("th");
+  actionsHeader.scope = "col";
+  actionsHeader.className = "row-actions";
+  actionsHeader.textContent = "Дії";
+  headerRow.append(actionsHeader);
   head.append(headerRow);
   table.append(head);
 
@@ -325,6 +330,19 @@ function createTable(data, columns) {
       }
       row.append(cell);
     });
+    const actionsCell = document.createElement("td");
+    actionsCell.className = "row-actions";
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-record-button";
+    deleteButton.dataset.action = "delete-record";
+    deleteButton.dataset.entity = entity;
+    deleteButton.dataset.recordId = String(record.id);
+    deleteButton.setAttribute("aria-label", `Видалити запис №${record.id}`);
+    deleteButton.title = "Видалити запис";
+    deleteButton.textContent = "×";
+    actionsCell.append(deleteButton);
+    row.append(actionsCell);
     body.append(row);
   });
   table.append(body);
@@ -457,7 +475,45 @@ const tableConfigs = [
 
 function renderTable(containerId, rows, tableColumns) {
   const container = document.getElementById(containerId);
-  if (container) container.replaceChildren(createTable(rows, tableColumns));
+  const config = tableConfigs.find((item) => item.containerId === containerId);
+  if (container && config) container.replaceChildren(createTable(rows, tableColumns, config.entity));
+}
+
+const relationshipFields = {
+  children: "childId",
+  parents: "parentId",
+  campShifts: "shiftId",
+};
+
+function deleteRecord(config, recordId, button) {
+  if (!config || button.disabled) return;
+  const recordIndex = config.rows.findIndex((record) => String(record?.id) === String(recordId));
+  if (recordIndex === -1) return;
+
+  const relationshipField = relationshipFields[config.entity];
+  if (relationshipField) {
+    const references = bookings.filter((booking) => String(booking?.[relationshipField]) === String(recordId));
+    if (references.length) {
+      const bookingNumbers = references.map((booking) => `№${booking.id}`).join(", ");
+      window.alert(`Неможливо видалити цей запис: на нього посилається бронювання ${bookingNumbers}.`);
+      return;
+    }
+  }
+
+  button.disabled = true;
+  const remainingRecords = config.rows.filter((_, index) => index !== recordIndex);
+  try {
+    window.localStorage.setItem(STORAGE_KEYS[config.entity], JSON.stringify(remainingRecords));
+  } catch {
+    button.disabled = false;
+    window.alert("Не вдалося зберегти видалення у сховищі браузера. Запис не видалено; перевірте доступ до localStorage і спробуйте ще раз.");
+    return;
+  }
+
+  // Зберігаємо посилання на масиви, які використовують tableConfigs і форми.
+  config.rows.splice(0, config.rows.length, ...remainingRecords);
+  renderTable(config.containerId, config.rows, config.columns);
+  if (relationshipField) refreshBookingSelectors();
 }
 
 const formSubmissionsInProgress = new WeakSet();
@@ -534,6 +590,12 @@ tableConfigs.forEach(({ rows, containerId, columns: tableColumns }) => {
   renderTable(containerId, rows, tableColumns);
   const container = document.getElementById(containerId);
   container?.addEventListener("click", (event) => {
+    const deleteButton = event.target.closest("button[data-action='delete-record']");
+    if (deleteButton) {
+      const config = tableConfigs.find((item) => item.entity === deleteButton.dataset.entity);
+      deleteRecord(config, deleteButton.dataset.recordId, deleteButton);
+      return;
+    }
     const cell = event.target.closest("td[data-editable-field]");
     if (cell && !cell.querySelector("input, select, textarea")) beginInlineEdit(cell);
   });

@@ -9,7 +9,7 @@
 body { margin: 0; min-width: 320px; }
 
 .page-shell {
-  width: min(1120px, calc(100% - 40px));
+  width: min(1600px, calc(100% - 64px));
   margin: 56px auto;
 }
 
@@ -107,6 +107,23 @@ tbody tr:last-child td { border-bottom: 0; }
 td[data-editable-field] { cursor: pointer; }
 td[data-editable-field]:hover { background: #f8fafc; }
 td[data-editable-field]:focus-visible { outline: 2px solid #2563eb; outline-offset: -2px; }
+.row-actions { width: 1%; text-align: center; }
+.delete-record-button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid #f1c6c3;
+  border-radius: 6px;
+  background: #fff;
+  color: #b42318;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.delete-record-button:hover { border-color: #b42318; background: #fff5f4; }
+.delete-record-button:focus-visible { outline: 3px solid #f2b8b5; outline-offset: 2px; }
+.delete-record-button:disabled { cursor: wait; opacity: 0.6; }
 
 @media (max-width: 600px) {
   .page-shell { width: min(100% - 24px, 1120px); margin: 32px auto; }
