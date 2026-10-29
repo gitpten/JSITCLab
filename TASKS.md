@@ -476,6 +476,38 @@ Verify that editing, deletion, relationship checks, validation, and persistence 
 
 ---
 
+## TASK-15. Synchronize Changes Across Browser Tabs
+
+### Goal
+
+Keep all open copies of the application in the same browser profile synchronized when records are added, edited, or deleted.
+
+### Requirements
+
+1. Use the browser's `storage` event or another standard browser mechanism; do not add third-party libraries, frameworks, or a backend.
+2. Listen for changes to the four entity keys defined for `localStorage`.
+3. When another tab changes or removes an entity key, load the current value from `localStorage`, validate its structure, and update the matching in-memory array.
+4. Preserve the existing array references used by table configurations and forms when applying updates.
+5. Re-render the affected table after applying a valid external change.
+6. When children, parents, or camp shifts change, refresh booking rows and the booking form selectors that depend on those entities.
+7. Handle malformed or unavailable stored values without crashing or silently replacing valid data; provide clear feedback where appropriate.
+8. Do not write the received storage event back to `localStorage`, to avoid synchronization loops.
+9. Keep the initiating tab's existing local update behavior, since its own writes do not trigger a `storage` event in that tab.
+10. Ensure synchronization covers additions, edits, and deletions for children, parents, camp shifts, and bookings.
+
+### Acceptance Criteria
+
+- Adding a record in one tab causes the corresponding table and dependent selectors in other open tabs to update automatically.
+- Editing a record in one tab updates the corresponding table in other open tabs automatically.
+- Deleting a record in one tab updates the corresponding table and dependent selectors in other open tabs automatically.
+- Changes to child, parent, and camp shift records refresh booking labels and selectors in every other tab.
+- The initiating tab remains responsive and correctly updated without relying on a `storage` event.
+- Invalid external storage data does not crash the application or cause valid in-memory data to be silently overwritten.
+- No third-party dependencies or server-side storage are introduced.
+- The implementation meets the cross-tab synchronization requirements in `SPEC.md`.
+
+---
+
 ## Implementation Notes
 
 - Complete the tasks in the order listed.
@@ -490,6 +522,7 @@ Verify that editing, deletion, relationship checks, validation, and persistence 
 - TASK-12 adds deletion and relationship checks.
 - TASK-13 integrates deletion with persistence and UI updates.
 - TASK-14 verifies editing and deletion flows.
+- TASK-15 implements and verifies cross-tab synchronization for all record changes.
 - Keep data initialization, validation, form handling, persistence, and UI rendering logically separated.
 - Do not introduce a backend or database as part of these tasks.
 - If an existing implementation conflicts with a requirement, identify the conflict and make only the changes necessary to satisfy the current task.
