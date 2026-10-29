@@ -512,7 +512,10 @@ const relationshipFields = {
 };
 
 function deleteRecord(config, recordId, button) {
-  if (!config || button.disabled) return;
+  if (!config || !button || button.disabled) return;
+  const storageKey = STORAGE_KEYS[config.entity];
+  if (!storageKey || !Array.isArray(config.rows)) return;
+
   const recordIndex = config.rows.findIndex((record) => String(record?.id) === String(recordId));
   if (recordIndex === -1) return;
 
@@ -529,7 +532,9 @@ function deleteRecord(config, recordId, button) {
   button.disabled = true;
   const remainingRecords = config.rows.filter((_, index) => index !== recordIndex);
   try {
-    window.localStorage.setItem(STORAGE_KEYS[config.entity], JSON.stringify(remainingRecords));
+    // Спершу зберігаємо новий стан. Якщо localStorage недоступний або запис
+    // відхилено (наприклад, через ліміт квоти), масив у пам'яті не змінюємо.
+    window.localStorage.setItem(storageKey, JSON.stringify(remainingRecords));
   } catch {
     button.disabled = false;
     window.alert("Не вдалося зберегти видалення у сховищі браузера. Запис не видалено; перевірте доступ до localStorage і спробуйте ще раз.");
