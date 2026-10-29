@@ -317,12 +317,95 @@ function createTable(data, columns) {
       const cell = document.createElement("td");
       const cellValue = typeof value === "function" ? value(record) : record?.[value];
       cell.textContent = formatValue(field ?? (typeof value === "string" ? value : ""), cellValue);
+      if (typeof value === "string" && !["id", "parentId", "childId", "shiftId", "relationship"].includes(value)) {
+        cell.dataset.editableField = value;
+        cell.dataset.recordId = String(record.id);
+        cell.tabIndex = 0;
+        cell.setAttribute("aria-label", `${labelForField(value)}: редагувати`);
+      }
       row.append(cell);
     });
     body.append(row);
   });
   table.append(body);
   return table;
+}
+
+function labelForField(field) {
+  return fieldLabels[field] ?? field;
+}
+
+const inlineInputTypes = {
+  birthDate: "date", startDate: "date", endDate: "date", createdAt: "datetime-local",
+  price: "number", capacity: "number", email: "email", phone: "tel",
+};
+const inlineOptions = {
+  gender: [["female", "жіноча"], ["male", "чоловіча"]],
+  relationship: [["mother", "мати"], ["father", "батько"], ["guardian", "законний представник"]],
+  status: [["new", "нове"], ["pending", "очікує підтвердження"], ["confirmed", "підтверджено"], ["cancelled", "скасовано"], ["completed", "завершено"]],
+  paymentStatus: [["unpaid", "не сплачено"], ["partially_paid", "сплачено частково"], ["paid", "сплачено"], ["refunded", "кошти повернено"]],
+};
+
+function beginInlineEdit(cell) {
+  if (!cell?.dataset.editableField || cell.querySelector("input, select, textarea")) return;
+  const field = cell.dataset.editableField;
+  const config = tableConfigs.find((item) => item.containerId === cell.closest(".table-wrap")?.id);
+  const record = config?.rows.find((item) => String(item.id) === cell.dataset.recordId);
+  if (!record) return;
+
+  const original = record[field] ?? "";
+  const editor = inlineOptions[field] ? document.createElement("select") : document.createElement(field === "notes" || field === "description" || field === "comment" ? "textarea" : "input");
+  editor.className = "inline-editor";
+  if (editor instanceof HTMLInputElement) {
+    editor.type = inlineInputTypes[field] ?? "text";
+    if (editor.type === "number") editor.step = field === "capacity" ? "1" : "any";
+    editor.value = field === "createdAt" && original ? new Date(original).toISOString().slice(0, 16) : String(original);
+  } else if (editor instanceof HTMLSelectElement) {
+    inlineOptions[field].forEach(([value, label]) => editor.add(new Option(label, value)));
+    editor.value = String(original);
+  } else editor.value = String(original);
+
+  cell.replaceChildren(editor);
+  const finish = (save) => {
+    if (!cell.contains(editor)) return;
+    if (!save) {
+      cell.textContent = formatValue(field, original);
+      return;
+    }
+    const value = editor.value;
+    const nextValue = editor instanceof HTMLInputElement && editor.type === "number" && value !== "" ? Number(value)
+      : editor instanceof HTMLInputElement && editor.type === "datetime-local" && value ? new Date(value).toISOString()
+        : value;
+    if (nextValue === original) {
+      cell.textContent = formatValue(field, original);
+      return;
+    }
+    const updated = config.rows.map((item) => item === record ? { ...item, [field]: nextValue } : item);
+    try {
+      window.localStorage.setItem(STORAGE_KEYS[config.entity], JSON.stringify(updated));
+      Object.assign(record, { [field]: nextValue });
+      renderTable(config.containerId, config.rows, config.columns);
+    } catch {
+      cell.textContent = formatValue(field, original);
+      window.alert("Не вдалося зберегти зміну у сховище браузера.");
+    }
+  };
+  editor.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { event.preventDefault(); finish(false); }
+    else if (event.key === "Enter" && !(editor instanceof HTMLTextAreaElement && event.shiftKey)) { event.preventDefault(); finish(true); }
+  });
+  editor.addEventListener("blur", () => finish(true));
+  if (inlineOptions[field]) editor.addEventListener("change", () => finish(true));
+  const confirm = document.createElement("button");
+  confirm.type = "button";
+  confirm.className = "inline-confirm";
+  confirm.textContent = "Зберегти";
+  confirm.setAttribute("aria-label", "Підтвердити зміну");
+  confirm.addEventListener("mousedown", (event) => event.preventDefault());
+  confirm.addEventListener("click", () => finish(true));
+  cell.append(confirm);
+  editor.focus();
+  if (editor instanceof HTMLInputElement || editor instanceof HTMLTextAreaElement) editor.select();
 }
 
 const fullName = (person) => [person?.firstName, person?.lastName].filter(Boolean).join(" ") || "—";
@@ -366,10 +449,10 @@ const columns = {
 };
 
 const tableConfigs = [
-  { rows: children, containerId: "children-table", columns: columns.children },
-  { rows: parents, containerId: "parents-table", columns: columns.parents },
-  { rows: campShifts, containerId: "camp-shifts-table", columns: columns.campShifts },
-  { rows: bookings, containerId: "bookings-table", columns: columns.bookings },
+  { entity: "children", rows: children, containerId: "children-table", columns: columns.children },
+  { entity: "parents", rows: parents, containerId: "parents-table", columns: columns.parents },
+  { entity: "campShifts", rows: campShifts, containerId: "camp-shifts-table", columns: columns.campShifts },
+  { entity: "bookings", rows: bookings, containerId: "bookings-table", columns: columns.bookings },
 ];
 
 function renderTable(containerId, rows, tableColumns) {
@@ -449,6 +532,17 @@ function createRecord({ entity, records, record, form, tableId, tableColumns, me
 
 tableConfigs.forEach(({ rows, containerId, columns: tableColumns }) => {
   renderTable(containerId, rows, tableColumns);
+  const container = document.getElementById(containerId);
+  container?.addEventListener("click", (event) => {
+    const cell = event.target.closest("td[data-editable-field]");
+    if (cell && !cell.querySelector("input, select, textarea")) beginInlineEdit(cell);
+  });
+  container?.addEventListener("keydown", (event) => {
+    if ((event.key === "Enter" || event.key === " ") && event.target.matches("td[data-editable-field]")) {
+      event.preventDefault();
+      beginInlineEdit(event.target);
+    }
+  });
 });
 
 const childForm = document.getElementById("child-form");
