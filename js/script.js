@@ -322,7 +322,7 @@ function createTable(data, columns, entity) {
       const cell = document.createElement("td");
       const cellValue = typeof value === "function" ? value(record) : record?.[value];
       cell.textContent = formatValue(field ?? (typeof value === "string" ? value : ""), cellValue);
-      if (typeof value === "string" && !["id", "parentId", "childId", "shiftId", "relationship"].includes(value)) {
+      if (typeof value === "string" && !["id", "parentId", "childId", "shiftId"].includes(value)) {
         cell.dataset.editableField = value;
         cell.dataset.recordId = String(record.id);
         cell.tabIndex = 0;
