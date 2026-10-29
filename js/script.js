@@ -580,6 +580,55 @@ function refreshBookingSelectors() {
   }
 }
 
+function showStorageSyncNotice(entity, message) {
+  let notice = document.getElementById("storage-sync-notice");
+  if (!notice) {
+    notice = document.createElement("p");
+    notice.id = "storage-sync-notice";
+    notice.className = "storage-notice";
+    notice.setAttribute("role", "status");
+    document.querySelector("main")?.prepend(notice);
+  }
+  if (notice) {
+    notice.dataset.entity = entity;
+    notice.textContent = message;
+  }
+}
+
+function synchronizeExternalStorageChange(event) {
+  const entity = Object.keys(STORAGE_KEYS).find((key) => STORAGE_KEYS[key] === event.key);
+  if (!entity) return;
+
+  let nextRecords;
+  try {
+    // Перечитуємо сховище, а не покладаємося на застарілий event.newValue.
+    const storedValue = window.localStorage.getItem(event.key);
+    nextRecords = storedValue === null
+      ? [...RECORD_ARRAYS[entity]]
+      : JSON.parse(storedValue);
+    if (!isValidRecordArray(entity, nextRecords)) throw new Error("Некоректна структура даних.");
+  } catch {
+    const entityLabels = { children: "дітей", parents: "батьків", campShifts: "змін табору", bookings: "бронювань" };
+    showStorageSyncNotice(entity, `Не вдалося синхронізувати ${entityLabels[entity]}: дані у сховищі недоступні або мають некоректний формат. Поточні дані цієї вкладки залишено без змін.`);
+    return;
+  }
+
+  const config = tableConfigs.find((item) => item.entity === entity);
+  if (!config) return;
+
+  // Зберігаємо посилання на масив, яким користуються форми та конфігурація таблиць.
+  config.rows.splice(0, config.rows.length, ...nextRecords);
+  renderTable(config.containerId, config.rows, config.columns);
+
+  if (["children", "parents", "campShifts"].includes(entity)) {
+    renderTable("bookings-table", bookings, columns.bookings);
+    refreshBookingSelectors();
+  }
+
+  const notice = document.getElementById("storage-sync-notice");
+  if (notice?.dataset.entity === entity) notice.remove();
+}
+
 function createRecord({ entity, records, record, form, tableId, tableColumns, message, successText }) {
   if (formSubmissionsInProgress.has(form)) return false;
   formSubmissionsInProgress.add(form);
@@ -812,6 +861,10 @@ if (bookingForm) {
     });
   });
 }
+
+// Подія storage надходить в інші вкладки того самого профілю; у вкладці-ініціаторі
+// локальні обробники додавання, редагування та видалення вже оновлюють інтерфейс.
+window.addEventListener("storage", synchronizeExternalStorageChange);
 
 const tabs = Array.from(document.querySelectorAll("[role='tab']"));
 const panels = Array.from(document.querySelectorAll("[role='tabpanel']"));
