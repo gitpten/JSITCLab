@@ -369,7 +369,7 @@ function beginInlineEdit(cell) {
   const field = cell.dataset.editableField;
   const config = tableConfigs.find((item) => item.containerId === cell.closest(".table-wrap")?.id);
   const record = config?.rows.find((item) => String(item.id) === cell.dataset.recordId);
-  if (!record) return;
+  if (!config || !record) return;
 
   const original = record[field] ?? "";
   const editor = inlineOptions[field] ? document.createElement("select") : document.createElement(field === "notes" || field === "description" || field === "comment" ? "textarea" : "input");
@@ -384,6 +384,18 @@ function beginInlineEdit(cell) {
   } else editor.value = String(original);
 
   cell.replaceChildren(editor);
+  const errorMessage = document.createElement("span");
+  errorMessage.className = "inline-edit-error";
+  errorMessage.setAttribute("role", "alert");
+  const showError = (message) => {
+    editor.setAttribute("aria-invalid", "true");
+    errorMessage.textContent = message;
+    editor.focus();
+  };
+  const clearError = () => {
+    editor.removeAttribute("aria-invalid");
+    errorMessage.textContent = "";
+  };
   const finish = (save) => {
     if (!cell.contains(editor)) return;
     if (!save) {
@@ -398,16 +410,29 @@ function beginInlineEdit(cell) {
       cell.textContent = formatValue(field, original);
       return;
     }
-    const updated = config.rows.map((item) => item === record ? { ...item, [field]: nextValue } : item);
+    const candidate = { ...record, [field]: nextValue };
+    const entityType = { children: "child", parents: "parent", campShifts: "campShift", bookings: "booking" }[config.entity];
+    const validation = validateEntity(entityType, candidate, { children, parents, campShifts });
+    if (!validation.isValid) {
+      const error = validation.errors[field] ?? Object.values(validation.errors)[0] ?? "Перевірте введене значення.";
+      showError(error);
+      return;
+    }
+    const updated = config.rows.map((item) => item === record ? candidate : item);
     try {
       window.localStorage.setItem(STORAGE_KEYS[config.entity], JSON.stringify(updated));
       Object.assign(record, { [field]: nextValue });
       renderTable(config.containerId, config.rows, config.columns);
+      if (["children", "parents", "campShifts"].includes(config.entity)) {
+        renderTable("bookings-table", bookings, columns.bookings);
+        refreshBookingSelectors();
+      }
     } catch {
-      cell.textContent = formatValue(field, original);
-      window.alert("Не вдалося зберегти зміну у сховище браузера.");
+      showError("Не вдалося зберегти зміну у сховище браузера. Виправте значення або повторіть спробу.");
     }
   };
+  editor.addEventListener("input", clearError);
+  editor.addEventListener("change", clearError);
   editor.addEventListener("keydown", (event) => {
     if (event.key === "Escape") { event.preventDefault(); finish(false); }
     else if (event.key === "Enter" && !(editor instanceof HTMLTextAreaElement && event.shiftKey)) { event.preventDefault(); finish(true); }
@@ -422,6 +447,7 @@ function beginInlineEdit(cell) {
   confirm.addEventListener("mousedown", (event) => event.preventDefault());
   confirm.addEventListener("click", () => finish(true));
   cell.append(confirm);
+  cell.append(errorMessage);
   editor.focus();
   if (editor instanceof HTMLInputElement || editor instanceof HTMLTextAreaElement) editor.select();
 }

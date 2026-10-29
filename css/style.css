@@ -103,6 +103,8 @@ th { color: #667085; font-size: 0.78rem; letter-spacing: 0.04em; text-transform:
 td { color: #344054; font-size: 0.92rem; }
 tbody tr:last-child td { border-bottom: 0; }
 .inline-editor { min-width: 8rem; max-width: 18rem; padding: 6px 8px; border: 1px solid #98a2b3; border-radius: 4px; font: inherit; }
+.inline-editor[aria-invalid="true"] { border-color: #b42318; }
+.inline-edit-error { display: block; margin-top: 4px; color: #b42318; font-size: 0.78rem; white-space: normal; }
 .inline-confirm { margin-left: 6px; padding: 6px 8px; border: 0; border-radius: 4px; background: #2563eb; color: #fff; cursor: pointer; font: inherit; font-size: 0.8rem; }
 td[data-editable-field] { cursor: pointer; }
 td[data-editable-field]:hover { background: #f8fafc; }
