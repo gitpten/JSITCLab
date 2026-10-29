@@ -345,6 +345,137 @@ Verify that all entity creation forms, validation rules, relationships, and pers
 
 ---
 
+## TASK-10. Implement Shared Inline Editing Behavior
+
+### Goal
+
+Create reusable behavior for editing values directly in table cells.
+
+### Requirements
+
+1. Replace an editable cell value with an input control when the user clicks it.
+2. Initialize the input with the current value.
+3. Support saving with Enter, a confirmation button, or when the input loses focus.
+4. Support cancelling the edit with Escape.
+5. Use an appropriate input control for values with a restricted set of options or a specific format.
+6. Do not allow IDs or relationship fields to be edited through this behavior.
+7. Avoid registering duplicate event handlers when tables are rendered again.
+
+### Acceptance Criteria
+
+- Clicking an editable value enters edit mode and shows its current value in the input.
+- Enter, the confirmation button, and loss of focus save the edit.
+- Escape cancels the edit and restores the original value.
+- Re-rendering a table does not cause a single user action to be handled more than once.
+- IDs and relationship fields cannot be changed through inline editing.
+
+---
+
+## TASK-11. Add Editing for Records of All Entity Types
+
+### Goal
+
+Enable editing of allowed fields in the Children, Parents, Camp Shifts, and Bookings tables.
+
+### Requirements
+
+1. Identify which fields can be edited for each entity and choose an appropriate input control for each field.
+2. Apply the validation rules defined in `SPEC.md` and the existing validation tasks, including required fields, dates, and numeric values.
+3. Reject invalid changes and display a clear error message.
+4. Preserve record IDs and relationship fields when editing ordinary values.
+5. Refresh the affected table after a successful edit.
+6. Save successful edits to the appropriate `localStorage` key.
+7. Keep the inline editing behavior reusable rather than duplicating it for each entity.
+
+### Acceptance Criteria
+
+- Users can edit the allowed fields for all four entity types.
+- Valid changes appear in the corresponding table and remain available after a page reload.
+- Invalid changes are rejected with a useful error message.
+- Editing ordinary fields does not change record IDs or entity relationships.
+- Existing table navigation and rendering continue to work.
+
+---
+
+## TASK-12. Add Record Deletion and Relationship Checks
+
+### Goal
+
+Allow users to delete records from tables while preserving valid relationships between entities.
+
+### Requirements
+
+1. Add a delete control, such as an X icon, to every table row.
+2. Before deleting a child, parent, or camp shift, check whether any booking references that record.
+3. Block deletion when a booking references the record and display a clear message explaining that it is in use.
+4. Allow bookings to be deleted without checking for dependent records.
+5. Remove successfully deleted records from the corresponding in-memory array.
+6. Refresh the corresponding table without reloading the page after successful deletion.
+
+### Acceptance Criteria
+
+- Every table row has a delete control.
+- A child, parent, or camp shift referenced by a booking cannot be deleted.
+- The user receives a clear explanation when deletion is blocked.
+- Unreferenced children, parents, and camp shifts can be deleted.
+- Bookings can be deleted.
+- Tables update after successful deletion without a page reload.
+
+---
+
+## TASK-13. Persist Deletions and Keep Application State Consistent
+
+### Goal
+
+Integrate record deletion with `localStorage` and ensure the in-memory data and persisted data remain consistent.
+
+### Requirements
+
+1. Save each successful deletion to the corresponding `localStorage` key.
+2. Handle storage failures without showing a misleading success message.
+3. Ensure a failed storage operation does not silently leave in-memory and persisted data inconsistent.
+4. Refresh any tables or interface elements that depend on the changed data.
+5. Prevent repeated clicks or repeated event handling from causing errors or unintended duplicate actions.
+
+### Acceptance Criteria
+
+- Successfully deleted records remain deleted after a page reload.
+- A storage failure is reported clearly and does not produce a false success message.
+- Failed persistence does not silently leave the application in an inconsistent state.
+- Relevant tables and dependent interface elements reflect successful deletions.
+- Repeated user actions do not cause errors or unintended changes.
+
+---
+
+## TASK-14. Verify Record Editing and Deletion Flows
+
+### Goal
+
+Verify that editing, deletion, relationship checks, validation, and persistence work as specified.
+
+### Requirements
+
+1. Verify editing of allowed fields for all four entity types.
+2. Verify saving edits with Enter, the confirmation button, and loss of focus, as well as cancelling with Escape.
+3. Verify rejection of invalid values.
+4. Verify deletion of bookings and unreferenced records.
+5. Verify that deleting a child, parent, or camp shift referenced by a booking is blocked with a clear message.
+6. Reload the page and verify that successful edits and deletions persist.
+7. Verify behavior when `localStorage` is unavailable or a write operation fails.
+8. Check the browser console for errors.
+9. Verify compliance with `SPEC.md` and confirm that no third-party libraries or frameworks have been introduced.
+
+### Acceptance Criteria
+
+- Valid edits and deletions are reflected in the tables and persist after a page reload.
+- Invalid edits are rejected with clear feedback.
+- Records referenced by bookings cannot be deleted.
+- Storage failures do not produce misleading success messages or silently corrupt application state.
+- No critical JavaScript errors remain.
+- The application meets the requirements defined in `SPEC.md`.
+
+---
+
 ## Implementation Notes
 
 - Complete the tasks in the order listed.
@@ -354,7 +485,11 @@ Verify that all entity creation forms, validation rules, relationships, and pers
 - TASK-04 through TASK-07 implement the individual entity forms.
 - TASK-08 integrates validated record creation, persistence, and UI updates.
 - TASK-09 verifies the complete application flow.
+- TASK-10 establishes reusable inline editing behavior.
+- TASK-11 adds editing for all entity types.
+- TASK-12 adds deletion and relationship checks.
+- TASK-13 integrates deletion with persistence and UI updates.
+- TASK-14 verifies editing and deletion flows.
 - Keep data initialization, validation, form handling, persistence, and UI rendering logically separated.
-- Do not introduce a backend, database, record editing, or deletion functionality as part of these tasks.
+- Do not introduce a backend or database as part of these tasks.
 - If an existing implementation conflicts with a requirement, identify the conflict and make only the changes necessary to satisfy the current task.
-
