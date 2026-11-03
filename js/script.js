@@ -1,27 +1,3 @@
-const sampleChildren = [
-  { id: 1, firstName: "Марія", lastName: "Коваль", middleName: "Олександрівна", birthDate: "2014-05-12", gender: "female", notes: "Захоплюється малюванням." },
-  { id: 2, firstName: "Андрій", lastName: "Шевченко", middleName: "Ігорович", birthDate: "2013-09-03", gender: "male", notes: "Любить футбол." },
-  { id: 3, firstName: "Софія", lastName: "Мельник", middleName: "Романівна", birthDate: "2015-01-27", gender: "female", notes: "Відвідує гурток робототехніки." },
-];
-
-const sampleParents = [
-  { id: 1, firstName: "Олена", lastName: "Коваль", middleName: "Петрівна", phone: "+380501234567", email: "olena.koval@example.com", relationship: "mother" },
-  { id: 2, firstName: "Ігор", lastName: "Шевченко", middleName: "Васильович", phone: "+380671234568", email: "ihor.shevchenko@example.com", relationship: "father" },
-  { id: 3, firstName: "Роман", lastName: "Мельник", middleName: "Тарасович", phone: "+380931234569", email: "roman.melnyk@example.com", relationship: "father" },
-];
-
-const sampleCampShifts = [
-  { id: 1, name: "Літня пригода", startDate: "2026-06-15", endDate: "2026-06-28", price: 18000, capacity: 40, description: "Ігри на свіжому повітрі, походи та командні завдання." },
-  { id: 2, name: "Творча майстерня", startDate: "2026-07-05", endDate: "2026-07-18", price: 19500, capacity: 32, description: "Малювання, музика, театр і творчі проєкти." },
-  { id: 3, name: "Науковий старт", startDate: "2026-07-25", endDate: "2026-08-07", price: 21000, capacity: 30, description: "Експерименти, робототехніка та знайомство з наукою." },
-];
-
-const sampleBookings = [
-  { id: 1, parentId: 1, childId: 1, shiftId: 1, createdAt: "2026-03-10T09:30:00", status: "confirmed", paymentStatus: "paid", comment: "Потрібне вегетаріанське меню." },
-  { id: 2, parentId: 2, childId: 2, shiftId: 2, createdAt: "2026-03-12T14:15:00", status: "pending", paymentStatus: "partially_paid", comment: "Решту суми буде сплачено до початку зміни." },
-  { id: 3, parentId: 3, childId: 3, shiftId: 3, createdAt: "2026-03-15T11:00:00", status: "new", paymentStatus: "unpaid", comment: "" },
-];
-
 const STORAGE_KEYS = {
   children: "campBooking.children",
   parents: "campBooking.parents",
@@ -29,11 +5,11 @@ const STORAGE_KEYS = {
   bookings: "campBooking.bookings",
 };
 
-const RECORD_ARRAYS = {
-  children: sampleChildren,
-  parents: sampleParents,
-  campShifts: sampleCampShifts,
-  bookings: sampleBookings,
+const EMPTY_RECORDS = {
+  children: [],
+  parents: [],
+  campShifts: [],
+  bookings: [],
 };
 
 const REQUIRED_RECORD_FIELDS = {
@@ -61,15 +37,14 @@ function initializeRecords() {
     // Accessing the property itself may throw in restricted browser contexts.
     storage.getItem(STORAGE_KEYS.children);
   } catch {
-    return { ...RECORD_ARRAYS, storageAvailable: false };
+    return { ...EMPTY_RECORDS, storageAvailable: false };
   }
 
   for (const [entity, key] of Object.entries(STORAGE_KEYS)) {
     try {
       const savedValue = storage.getItem(key);
       if (savedValue === null) {
-        records[entity] = RECORD_ARRAYS[entity];
-        storage.setItem(key, JSON.stringify(records[entity]));
+        records[entity] = [];
         continue;
       }
 
@@ -77,17 +52,11 @@ function initializeRecords() {
       if (isValidRecordArray(entity, parsed)) {
         records[entity] = parsed;
       } else {
-        records[entity] = RECORD_ARRAYS[entity];
-        storage.setItem(key, JSON.stringify(records[entity]));
+        records[entity] = [];
       }
     } catch {
       // A broken key must not prevent loading the other entities.
-      records[entity] = RECORD_ARRAYS[entity];
-      try {
-        storage.setItem(key, JSON.stringify(records[entity]));
-      } catch {
-        return { ...RECORD_ARRAYS, ...records, storageAvailable: false };
-      }
+      records[entity] = [];
     }
   }
 
@@ -604,7 +573,7 @@ function synchronizeExternalStorageChange(event) {
     // Перечитуємо сховище, а не покладаємося на застарілий event.newValue.
     const storedValue = window.localStorage.getItem(event.key);
     nextRecords = storedValue === null
-      ? [...RECORD_ARRAYS[entity]]
+      ? []
       : JSON.parse(storedValue);
     if (!isValidRecordArray(entity, nextRecords)) throw new Error("Некоректна структура даних.");
   } catch {

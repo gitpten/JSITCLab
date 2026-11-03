@@ -508,6 +508,31 @@ Keep all open copies of the application in the same browser profile synchronized
 
 ---
 
+## TASK-16. Remove Automatic Sample Data Initialization
+
+### Goal
+
+Ensure that users start with empty entity records when no data has been saved, so their records and analytics are not mixed with hard-coded sample data.
+
+### Requirements
+
+1. Remove the automatic loading or insertion of hard-coded sample records when `localStorage` is empty or an entity storage key is missing.
+2. Initialize missing entity collections as empty arrays while preserving valid records already saved for other entities.
+3. Keep newly created accounts or fresh application storage free of records until the user adds them.
+4. Ensure analytics and all other views use only the current user's records, without implicitly mixing in sample data.
+5. If sample data is retained for product demonstrations, make it available only through an explicit demo mode or a dedicated test account; it must not be activated by an empty `localStorage` state.
+6. Preserve safe handling of malformed stored values and unavailable `localStorage` without replacing valid data with sample records.
+
+### Acceptance Criteria
+
+- On a fresh start with empty `localStorage`, all entity collections are empty and no sample records appear.
+- Missing entity keys initialize to empty collections without overwriting valid saved records for other entities.
+- User-created records and analytics are not mixed with sample data.
+- Any demo data can be accessed only through an explicit demo mode or dedicated test account.
+- The application remains usable when `localStorage` is unavailable, without injecting sample records.
+
+---
+
 ## Implementation Notes
 
 - Complete the tasks in the order listed.
@@ -523,6 +548,7 @@ Keep all open copies of the application in the same browser profile synchronized
 - TASK-13 integrates deletion with persistence and UI updates.
 - TASK-14 verifies editing and deletion flows.
 - TASK-15 implements and verifies cross-tab synchronization for all record changes.
+- TASK-16 removes automatic sample data initialization so user data and analytics remain isolated.
 - Keep data initialization, validation, form handling, persistence, and UI rendering logically separated.
 - Do not introduce a backend or database as part of these tasks.
 - If an existing implementation conflicts with a requirement, identify the conflict and make only the changes necessary to satisfy the current task.
